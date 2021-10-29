@@ -5,6 +5,9 @@ import org.th3shadowbroker.nexus.exceptions.RangeFormatException;
 
 import java.util.Random;
 
+/**
+ * Class for handling ranges like '5-10'.
+ */
 @Data
 public class NumericRange {
 
