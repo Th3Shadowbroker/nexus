@@ -2,6 +2,7 @@ package org.th3shadowbroker.nexus.mapping;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.th3shadowbroker.nexus.exceptions.MappingException;
+import org.th3shadowbroker.nexus.exceptions.ParsingException;
 import org.th3shadowbroker.nexus.mapping.annotations.ConfigPath;
 import org.th3shadowbroker.nexus.mapping.annotations.ParseWith;
 import org.th3shadowbroker.nexus.mapping.parsing.AbstractParser;
@@ -75,17 +76,22 @@ public class ObjectMapper {
                     assignedParser = parser.get().value().getConstructor().newInstance();
                     field.set(object, assignedParser.parse(field, values.get(path)));
 
-                // Presented parser is abstract
+                    // Presented parser is abstract
                 } catch (InstantiationException e) {
                     throw new MappingException(String.format("The class '%s' is abstract and therefore cannot be used as a parser!", parser.get().value().getName()), e);
 
-                // Cannot access constructor
+                    // Cannot access constructor
                 } catch (IllegalAccessException | NoSuchMethodException e) {
-                   throw new MappingException(String.format("The class '%s' requires and empty and public constructor!", parser.get().value().getName()), e);
+                    throw new MappingException(String.format("The class '%s' requires and empty and public constructor!", parser.get().value().getName()), e);
 
-                // Error while invoking the default constructor
+                    // Error while invoking the default constructor
                 } catch (InvocationTargetException e) {
                     throw new MappingException(String.format("The class '%s' returned an error during invocation!", parser.get().value().getName()), e);
+
+                // Parsing failed
+                } catch (ParsingException e) {
+                    throw new MappingException(String.format("Unable to parse '%s' as '%s'!", values.get(path), parser.get().value().getName()), e);
+
                 }
 
             // Set value directly
