@@ -25,6 +25,7 @@ public class MappingTest {
         values.put("some.int", 42);
         values.put("some.double", 4.2);
         values.put("some.range", "2.0-4.0");
+        values.put("some.other.range", "5.2-7.1");
         values.put("some.list", Collections.singletonList("somevalue"));
     }
 
@@ -54,6 +55,9 @@ public class MappingTest {
 
         assertEquals(values.get("some.range"), mapping.someRange.toString());
         log.info("\tsomeRange => {}", mapping.someRange.toString());
+
+        assertEquals(values.get("some.other.range"), mapping.someOtherRange.toString());
+        log.info("\tsomeOtherRange => {}", mapping.someOtherRange.toString());
 
         List<String> dummyList = mapping.someList;
         assertEquals(1, dummyList.size());

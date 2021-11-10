@@ -22,6 +22,10 @@ public class MappingDummy {
     @ParseWith(RangeParser.class)
     public NumericRange someRange;
 
+    @ConfigPath("some.other.range")
+    @ParseWith(RangeParser.class)
+    public NumericRange someOtherRange;
+
     @ConfigPath("some.list")
     public List<String> someList;
 

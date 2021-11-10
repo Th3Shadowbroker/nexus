@@ -6,6 +6,7 @@ import org.th3shadowbroker.nexus.exceptions.ParsingException;
 import org.th3shadowbroker.nexus.mapping.annotations.ConfigPath;
 import org.th3shadowbroker.nexus.mapping.annotations.ParseWith;
 import org.th3shadowbroker.nexus.mapping.parsing.AbstractParser;
+import org.th3shadowbroker.nexus.registry.ParserRegistry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -73,7 +74,14 @@ public class ObjectMapper {
 
                 // Instantiate parser and assign value
                 try {
-                    assignedParser = parser.get().value().getConstructor().newInstance();
+                    Optional<AbstractParser> parserInstance = ParserRegistry.getInstance().getParser(parser.get().value());
+                    if (parserInstance.isEmpty()) {
+                        assignedParser = parser.get().value().getConstructor().newInstance();
+                        ParserRegistry.getInstance().register(assignedParser);
+                    } else {
+                        assignedParser = parserInstance.get();
+                    }
+
                     field.set(object, assignedParser.parse(field, values.get(path)));
 
                     // Presented parser is abstract
