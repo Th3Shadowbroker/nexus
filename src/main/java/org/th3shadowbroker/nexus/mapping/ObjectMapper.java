@@ -1,5 +1,6 @@
 package org.th3shadowbroker.nexus.mapping;
 
+import lombok.Getter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.th3shadowbroker.nexus.exceptions.MappingException;
 import org.th3shadowbroker.nexus.exceptions.ParsingException;
@@ -21,12 +22,19 @@ import java.util.stream.Collectors;
  */
 public class ObjectMapper {
 
+    @Getter
+    private final ParserRegistry parserRegistry;
+
+    public ObjectMapper() {
+        this.parserRegistry = new ParserRegistry();
+    }
+
     /**
      * Get all fields declared in the given object.
      * @param object The object.
      * @return A list containing the declared fields.
      */
-    private static List<Field> getFields(Object object) {
+    private List<Field> getFields(Object object) {
         return Arrays.asList(object.getClass().getDeclaredFields());
     }
 
@@ -35,7 +43,7 @@ public class ObjectMapper {
      * @param field The field.
      * @return An optional of the annotation.
      */
-    private static Optional<ParseWith> getParserAnnotation(Field field) {
+    private Optional<ParseWith> getParserAnnotation(Field field) {
         return Optional.ofNullable(field.getAnnotation(ParseWith.class));
     }
 
@@ -44,7 +52,7 @@ public class ObjectMapper {
      * @param field The field.
      * @return An optional of the annotation.
      */
-    private static Optional<ConfigPath> getConfigPathAnnotation(Field field) {
+    private Optional<ConfigPath> getConfigPathAnnotation(Field field) {
         return Optional.ofNullable(field.getAnnotation(ConfigPath.class));
     }
 
@@ -54,7 +62,7 @@ public class ObjectMapper {
      * @param values A map containing the values.
      * @throws MappingException If an exception occurs while mapping the given object. (The original exception can bee accessed using getCause()).
      */
-    public static void map(Object object, Map<String, Object> values) throws MappingException {
+    public void map(Object object, Map<String, Object> values) throws MappingException {
         List<Field> annotatedFields = getFields(object).stream().filter(field -> field.canAccess(object)).collect(Collectors.toList());
 
         for (Field field : annotatedFields) {
@@ -66,40 +74,21 @@ public class ObjectMapper {
             String path = configPath.get().value();
 
             // Get parser
-            Optional<ParseWith> parser = getParserAnnotation(field);
+            Optional<AbstractParser> parser = getParser(field);
 
             // Use parser
             if (parser.isPresent()) {
-                AbstractParser assignedParser = null;
 
-                // Instantiate parser and assign value
                 try {
-                    Optional<AbstractParser> parserInstance = ParserRegistry.getInstance().getParser(parser.get().value());
-                    if (parserInstance.isEmpty()) {
-                        assignedParser = parser.get().value().getConstructor().newInstance();
-                        ParserRegistry.getInstance().register(assignedParser);
-                    } else {
-                        assignedParser = parserInstance.get();
-                    }
+                    field.set(object, parser.get().parse(field, values.get(path)));
 
-                    field.set(object, assignedParser.parse(field, values.get(path)));
-
-                    // Presented parser is abstract
-                } catch (InstantiationException e) {
-                    throw new MappingException(String.format("The class '%s' is abstract and therefore cannot be used as a parser!", parser.get().value().getName()), e);
-
-                    // Cannot access constructor
-                } catch (IllegalAccessException | NoSuchMethodException e) {
-                    throw new MappingException(String.format("The class '%s' requires and empty and public constructor!", parser.get().value().getName()), e);
-
-                    // Error while invoking the default constructor
-                } catch (InvocationTargetException e) {
-                    throw new MappingException(String.format("The class '%s' returned an error during invocation!", parser.get().value().getName()), e);
+                // Reflective access fails
+                } catch (IllegalAccessException ex) {
+                    throw new MappingException(String.format("The class '%s' requires and empty and public constructor!", parser.get().getClass().getName()), ex);
 
                 // Parsing failed
-                } catch (ParsingException e) {
-                    throw new MappingException(String.format("Unable to parse '%s' as '%s'!", values.get(path), parser.get().value().getName()), e);
-
+                } catch (ParsingException ex) {
+                    throw new MappingException(String.format("Unable to parse '%s' as '%s'!", values.get(path), parser.get().getClass().getName()), ex);
                 }
 
             // Set value directly
@@ -131,8 +120,22 @@ public class ObjectMapper {
      * @param configurationSection A configuration section.
      * @throws MappingException If an exception occurs while mapping the given object. (The original exception can bee accessed using getCause()).
      */
-    public static void map(Object object, ConfigurationSection configurationSection) throws MappingException {
+    public void map(Object object, ConfigurationSection configurationSection) throws MappingException {
         map(object, configurationSection.getValues(true));
+    }
+
+    /**
+     * Optionally returns the parser for the given Field.
+     * @param field The field.
+     * @return The optional parser.
+     */
+    public Optional<AbstractParser> getParser(Field field) {
+        Optional<ParseWith> parserAnnotation = getParserAnnotation(field);
+        if (parserAnnotation.isPresent()) {
+            return parserRegistry.getSpecificParser(parserAnnotation.get().value());
+        } else {
+            return parserRegistry.getParser(field.getType());
+        }
     }
 
 }

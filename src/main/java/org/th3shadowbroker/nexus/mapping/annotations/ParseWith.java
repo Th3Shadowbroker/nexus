@@ -9,9 +9,11 @@ import java.lang.annotation.Target;
 
 /**
  * Parse the annotated field with the given parser.
+ * @deprecated Will be removed in the future. If another parser should be used, a new ObjectMapper should be used.
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
+@Deprecated
 public @interface ParseWith {
 
     /**

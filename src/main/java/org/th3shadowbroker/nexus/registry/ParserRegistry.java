@@ -2,51 +2,72 @@ package org.th3shadowbroker.nexus.registry;
 
 import org.th3shadowbroker.nexus.mapping.parsing.AbstractParser;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
- * Registry for storing instances of different parsers.
- * @see AbstractParser
+ * Utility class to re-use parser instances.
+ * An instance of this class is included in every ObjectMapper to support individual ObjectMappers.
+ * @see org.th3shadowbroker.nexus.mapping.ObjectMapper
  */
 public class ParserRegistry {
 
-    private final List<AbstractParser> parsers;
+    /**
+     * The map associating Types with AbstractParsers.
+     */
+    private final Map<Class<?>, AbstractParser> registry;
 
-    private static ParserRegistry instance;
-
-    private ParserRegistry() {
-        this.parsers = new ArrayList<>();
+    /**
+     * Create a new ParserRegistry.
+     */
+    public ParserRegistry() {
+        this.registry = new HashMap<>();
     }
 
     /**
-     * Get an optional instance of the given parsers class.
-     * @param clazz The parser class.
-     * @see AbstractParser
-     * @return An optional instance of the given class.
+     * Get an optional parser for the given type.
+     * @param type The type.
+     * @return An optional parser.
      */
-    public Optional<AbstractParser> getParser(Class<? extends AbstractParser> clazz) {
-        return parsers.stream().filter(p -> p.getClass().equals(clazz)).findFirst();
+    public Optional<AbstractParser> getParser(Class<?> type) {
+        return Optional.ofNullable(registry.get(type));
+    }
+
+    /**
+     * Get an optional parser instance for the given type of parser.
+     * @param parserType The type of the parser.
+     * @return An optional parser.
+     */
+    public Optional<AbstractParser> getSpecificParser(Class<? extends AbstractParser> parserType) {
+        return registry.values().stream().filter(p -> p.getClass() == parserType).findFirst();
+    }
+
+    /**
+     * Returns a set containing all types that can be parsed by AbstractParsers within the registry.
+     * @return Set of all supported types.
+     */
+    public Set<Class<?>> getParsableTypes() {
+        return registry.keySet();
     }
 
     /**
      * Registers a new parser.
-     * @param abstractParser The parser.
-     * @see AbstractParser
+     * @param type The type.
+     * @param parser The parser instance.
      */
-    public void register(AbstractParser abstractParser) {
-        getParser(abstractParser.getClass()).ifPresent(p -> {
-            throw new RuntimeException(String.format("There's already a parser of type '%s'!", abstractParser.getClass().getName()));
-        });
-        parsers.add(abstractParser);
+    public void register(Class<?> type, AbstractParser parser) {
+        registry.put(type, parser);
     }
 
     /**
-     * Get the current instance of this class.
-     * @return The instance.
+     * Register multiple parsers a t once.
+     * @param parsers A map with the Type as the key and the AbstractParser as its value.
+     * @see AbstractParser
      */
-    public static ParserRegistry getInstance() {
-        if (instance == null) instance = new ParserRegistry();
-        return instance;
+    public void register(Map<Class<?>,AbstractParser> parsers) {
+        registry.putAll(parsers);
     }
 
 }

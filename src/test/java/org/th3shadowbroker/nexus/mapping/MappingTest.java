@@ -4,6 +4,11 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.th3shadowbroker.nexus.mapping.parsing.AbstractParser;
+import org.th3shadowbroker.nexus.mapping.parsing.MaterialIdentifierParser;
+import org.th3shadowbroker.nexus.mapping.parsing.RangeParser;
+import org.th3shadowbroker.nexus.util.MaterialIdentifier;
+import org.th3shadowbroker.nexus.util.NumericRange;
 
 import java.util.*;
 
@@ -39,7 +44,14 @@ public class MappingTest {
         assertNull(mapping.someString);
 
         // Process object
-        ObjectMapper.map(mapping, values);
+        Map<Class<?>, AbstractParser> parsers = new HashMap<>();
+        parsers.put(NumericRange.class, new RangeParser());
+        parsers.put(MaterialIdentifier.class, new MaterialIdentifierParser());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.getParserRegistry().register(parsers);
+
+        objectMapper.map(mapping, values);
 
         // Check fields
         log.info("Testing mapping:");
