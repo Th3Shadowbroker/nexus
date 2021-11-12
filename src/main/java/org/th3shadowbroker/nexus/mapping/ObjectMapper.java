@@ -5,12 +5,10 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.th3shadowbroker.nexus.exceptions.MappingException;
 import org.th3shadowbroker.nexus.exceptions.ParsingException;
 import org.th3shadowbroker.nexus.mapping.annotations.ConfigPath;
-import org.th3shadowbroker.nexus.mapping.annotations.ParseWith;
 import org.th3shadowbroker.nexus.mapping.parsing.AbstractParser;
 import org.th3shadowbroker.nexus.registry.ParserRegistry;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -36,15 +34,6 @@ public class ObjectMapper {
      */
     private List<Field> getFields(Object object) {
         return Arrays.asList(object.getClass().getDeclaredFields());
-    }
-
-    /**
-     * Get the @ParseWith annotation of the given field.
-     * @param field The field.
-     * @return An optional of the annotation.
-     */
-    private Optional<ParseWith> getParserAnnotation(Field field) {
-        return Optional.ofNullable(field.getAnnotation(ParseWith.class));
     }
 
     /**
@@ -74,7 +63,7 @@ public class ObjectMapper {
             String path = configPath.get().value();
 
             // Get parser
-            Optional<AbstractParser> parser = getParser(field);
+            Optional<AbstractParser> parser = parserRegistry.getParser(field.getType());
 
             // Use parser
             if (parser.isPresent()) {
@@ -122,20 +111,6 @@ public class ObjectMapper {
      */
     public void map(Object object, ConfigurationSection configurationSection) throws MappingException {
         map(object, configurationSection.getValues(true));
-    }
-
-    /**
-     * Optionally returns the parser for the given Field.
-     * @param field The field.
-     * @return The optional parser.
-     */
-    public Optional<AbstractParser> getParser(Field field) {
-        Optional<ParseWith> parserAnnotation = getParserAnnotation(field);
-        if (parserAnnotation.isPresent()) {
-            return parserRegistry.getSpecificParser(parserAnnotation.get().value());
-        } else {
-            return parserRegistry.getParser(field.getType());
-        }
     }
 
 }

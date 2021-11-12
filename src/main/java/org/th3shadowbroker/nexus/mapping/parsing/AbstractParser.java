@@ -1,14 +1,13 @@
 package org.th3shadowbroker.nexus.mapping.parsing;
 
 import org.th3shadowbroker.nexus.exceptions.ParsingException;
-import org.th3shadowbroker.nexus.mapping.annotations.ParseWith;
 
 import java.lang.reflect.Field;
 
 /**
- * Superclass for parsers used in the @ParseWith annotation.
+ * Superclass for creating parsers.
  * All subclasses of this class have to contain an empty constructor.
- * @see ParseWith
+ * @see org.th3shadowbroker.nexus.registry.ParserRegistry
  */
 public abstract class AbstractParser {
 
