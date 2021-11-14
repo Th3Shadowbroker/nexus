@@ -1,6 +1,9 @@
 package org.th3shadowbroker.nexus.util;
 
+import org.bukkit.Material;
 import org.th3shadowbroker.nexus.exceptions.IdentifierFormatException;
+
+import java.util.Optional;
 
 /**
  * A class to differentiate between materials on a config level.
@@ -9,6 +12,8 @@ import org.th3shadowbroker.nexus.exceptions.IdentifierFormatException;
  * NOTE: This is for config level only! An actual check has to be implemented on the side of the library user!
  */
 public record MaterialIdentifier(String namespace, String name) {
+
+    public static final String DEFAULT_NAMESPACE = "minecraft";
 
     /**
      * Create a new MaterialIdentifier.
@@ -27,6 +32,14 @@ public record MaterialIdentifier(String namespace, String name) {
      */
     public boolean isVanilla() {
         return namespace.equals("minecraft");
+    }
+
+    /**
+     * Get the vanilla material matching ONLY the name of this MaterialIdentifier.
+     * @return Material
+     */
+    public Optional<Material> getVanillaMaterial() {
+        return Optional.ofNullable(Material.getMaterial(name));
     }
 
     /**
@@ -52,7 +65,7 @@ public record MaterialIdentifier(String namespace, String name) {
         String[] splitted = str.toLowerCase().split(String.valueOf(separator));
 
         if (splitted.length == 1) {
-            return new MaterialIdentifier("minecraft", splitted[0]);
+            return new MaterialIdentifier(DEFAULT_NAMESPACE, splitted[0]);
         } else if (splitted.length == 2) {
             return new MaterialIdentifier(splitted[0], splitted[1]);
         }
